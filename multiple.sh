@@ -25,7 +25,7 @@ function main_menu() {
         echo "2. 验证安装"
         echo "3. 使用代理模式多开"
         echo "4. 退出"
-        read -p "请输入选项: " choice
+        read -p "请输入选项号码: " choice
         
         case $choice in
             1)
@@ -103,18 +103,15 @@ function install_multiple() {
 # 使用代理模式多开Multiple的函数
 function use_proxy_mode() {
     # 创建proxy.txt文件并让用户填写代理
-    echo "请填写代理服务器地址和端口，每行一个代理，按回车继续，空白不填按回车即可完成。"
+    echo "请填写代理服务器地址，按回车继续，空白不填按回车即可完成。"
+    echo "例如：socks5://user:pass@proxy.example.com:port"
     touch /tmp/multipleforlinux/multipleforlinux/proxy.txt
     while true; do
-        read -p "代理服务器地址: " proxy_server
-        if [ -z "$proxy_server" ]; then
+        read -p "代理服务器地址: " proxy
+        if [ -z "$proxy" ]; then
             break
         fi
-        read -p "代理服务器端口: " proxy_port
-        if [ -z "$proxy_port" ]; then
-            break
-        fi
-        echo "$proxy_server:$proxy_port" >> /tmp/multipleforlinux/multipleforlinux/proxy.txt
+        echo "$proxy" >> /tmp/multipleforlinux/multipleforlinux/proxy.txt
     done
 
     set_proxy
@@ -131,19 +128,50 @@ function use_proxy_mode() {
     # 循环创建和启动实例
     for (( i=1; i<=$num_instances; i++ )); do
         if [ ${#proxies[@]} -ge $i ]; then
-            export http_proxy="http://${proxies[i-1]}"
-            export https_proxy="http://${proxies[i-1]}"
-            export ftp_proxy="http://${proxies[i-1]}"
-            echo "代理已设置为 ${proxies[i-1]}"
+            export http_proxy="${proxies[i-1]}"
+            export https_proxy="${proxies[i-1]}"
+            export ftp_proxy="${proxies[i-1]}"
+            if [[ ${proxies[i-1]} =~ ^socks5:// ]]; then
+                export all_proxy="${proxies[i-1]}"
+                echo "SOCKS5代理已设置为 ${proxies[i-1]}"
+            else
+                echo "HTTP代理已设置为 ${proxies[i-1]}"
+            fi
         else
             echo "代理服务器列表不足，实例 $i 将不使用代理。"
         fi
         
-        echo "正在安装和启动第 $i 个实例..."
-        install_multiple
+        # 创建一个新的实例目录并复制文件
+        mkdir -p "/tmp/multipleforlinux_instance$i"
+        cp -r /tmp/multipleforlinux/multipleforlinux/* "/tmp/multipleforlinux_instance$i/"
+        
+        # 修改权限
+        chmod -R 777 "/tmp/multipleforlinux_instance$i"
+
+        # 创建Docker容器并运行multipleforlinux
+        docker run -d \
+            --name "multipleforlinux_instance$i" \
+            -v "/tmp/multipleforlinux_instance$i:/app" \
+            -e "http_proxy=$http_proxy" \
+            -e "https_proxy=$https_proxy" \
+            -e "ftp_proxy=$ftp_proxy" \
+            -e "all_proxy=$all_proxy" \
+            ubuntu:latest \
+            bash -c "cd /app && ./multiple-node > output.log 2>&1"
+
+        echo "第 $i 个实例已安装并启动在Docker容器中。"
+
+        # 提示用户输入标识码和PIN码
+        read -p "请输入唯一标识码: " identifier
+        read -p "请输入PIN码: " pin
+
+        # 使用用户提供的信息执行绑定命令
+        docker exec -it "multipleforlinux_instance$i" /app/multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
+
+        echo "绑定操作已完成。"
     done
 
-    echo "所有实例已安装并启动。"
+    echo "所有实例已安装并启动在Docker容器中。"
     read -p "按任意键返回主菜单..." -n1 -s
 }
 
