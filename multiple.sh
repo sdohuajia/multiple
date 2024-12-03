@@ -67,11 +67,11 @@ function install_multiple() {
         return 1
     fi
 
-    # 进入解压后的目录
-    cd multipleforlinux
-
     # 修改解压目录的权限
     chmod -R 777 multipleforlinux
+
+    # 进入解压后的目录
+    cd multipleforlinux
 
     # 添加权限
     chmod +x ./multiple-cli
