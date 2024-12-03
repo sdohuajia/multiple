@@ -148,30 +148,25 @@ function use_proxy_mode() {
         # 修改权限
         chmod -R 777 "/tmp/multipleforlinux_instance$i"
 
-        # 创建Docker容器并运行multipleforlinux
-        docker run -d \
-            --name "multipleforlinux_instance$i" \
-            -v "/tmp/multipleforlinux_instance$i:/app" \
-            -e "http_proxy=$http_proxy" \
-            -e "https_proxy=$https_proxy" \
-            -e "ftp_proxy=$ftp_proxy" \
-            -e "all_proxy=$all_proxy" \
-            ubuntu:latest \
-            bash -c "cd /app && ./multiple-node > output.log 2>&1"
+        # 添加权限
+        chmod +x "/tmp/multipleforlinux_instance$i/multiple-cli"
+        chmod +x "/tmp/multipleforlinux_instance$i/multiple-node"
 
-        echo "第 $i 个实例已安装并启动在Docker容器中。"
+        # 启动multiple-node
+        nohup "/tmp/multipleforlinux_instance$i/multiple-node" > "/tmp/multipleforlinux_instance$i/output.log" 2>&1 &
+        echo "第 $i 个实例已安装并启动。"
 
         # 提示用户输入标识码和PIN码
         read -p "请输入唯一标识码: " identifier
         read -p "请输入PIN码: " pin
 
         # 使用用户提供的信息执行绑定命令
-        docker exec -it "multipleforlinux_instance$i" /app/multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
+        "/tmp/multipleforlinux_instance$i/multiple-cli" bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
 
         echo "绑定操作已完成。"
     done
 
-    echo "所有实例已安装并启动在Docker容器中。"
+    echo "所有实例已安装并启动。"
     read -p "按任意键返回主菜单..." -n1 -s
 }
 
