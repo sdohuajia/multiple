@@ -13,7 +13,7 @@ function main_menu() {
         echo "1. 安装 Multiple"
         echo "2. 验证安装"
         echo "3. 退出"
-        read -p "请输入选项号码: " choice
+        read -p "请输入选项: " choice
         
         case $choice in
             1)
