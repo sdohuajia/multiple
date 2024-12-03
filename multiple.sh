@@ -59,6 +59,16 @@ function install_multiple() {
     # 启动multiple-node
     nohup ./multiple-node > output.log 2>&1 &
     echo "Multiple 已安装并启动。"
+
+    # 提示用户输入标识码和PIN码
+    read -p "请输入唯一标识码: " identifier
+    read -sp "请输入PIN码: " pin
+    echo
+
+    # 使用用户提供的信息执行绑定命令
+    multiple-cli bind --bandwidth-download 100 --identifier $identifier --pin $pin --storage 200 --bandwidth-upload 100
+
+    echo "绑定操作已完成。"
 }
 
 # 验证安装的函数
