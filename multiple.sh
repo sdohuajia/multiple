@@ -62,8 +62,7 @@ function install_multiple() {
 
     # 提示用户输入标识码和PIN码
     read -p "请输入唯一标识码: " identifier
-    read -sp "请输入PIN码: " pin
-    echo
+    read -p "请输入PIN码: " pin
 
     # 使用用户提供的信息执行绑定命令
     multiple-cli bind --bandwidth-download 100 --identifier $identifier --pin $pin --storage 200 --bandwidth-upload 100
