@@ -13,7 +13,7 @@ function main_menu() {
         echo "1. 安装 Multiple"
         echo "2. 验证安装"
         echo "3. 退出"
-        read -p "请输入选项: " choice
+        read -p "请输入选项号码: " choice
         
         case $choice in
             1)
@@ -69,6 +69,10 @@ function install_multiple() {
 
     echo "绑定操作已完成。"
     
+    # 清理压缩包
+    cd ..
+    rm multipleforlinux.tar
+
     # 让用户按任意键返回主菜单
     read -p "按任意键返回主菜单..." -n1 -s
 }
