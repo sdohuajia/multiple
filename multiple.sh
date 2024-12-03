@@ -71,7 +71,7 @@ function install_multiple() {
     cd multipleforlinux
 
     # 修改解压目录的权限
-    chmod -R 777 .
+    chmod -R 777 multipleforlinux
 
     # 添加权限
     chmod +x ./multiple-cli
@@ -79,9 +79,10 @@ function install_multiple() {
 
     # 配置环境变量
     echo "正在配置环境变量..."
-    echo 'PATH=$PATH:"/extracted directory/"' | sudo tee -a /etc/profile > /dev/null
-    echo 'PATH=$PATH:"/extracted directory/"' >> ~/.bashrc
+    echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile > /dev/null
+    echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
     source /etc/profile
+    source ~/.bashrc
 
     # 启动multiple-node
     nohup ./multiple-node > ./output.log 2>&1 &
