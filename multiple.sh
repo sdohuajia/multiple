@@ -50,10 +50,6 @@ function main_menu() {
 
 # 安装Multiple的函数
 function install_multiple() {
-    # 创建一个新的multipleforlinux目录
-    mkdir -p /tmp/multipleforlinux
-    cd /tmp/multipleforlinux
-
     # 下载程序
     if ! wget -O multipleforlinux.tar https://cdn.app.multiple.cc/client/linux/x64/multipleforlinux.tar; then
         echo "下载程序失败，请检查网络连接。"
