@@ -67,21 +67,24 @@ function install_multiple() {
         return 1
     fi
 
+    # 进入解压后的目录
+    cd multipleforlinux
+
     # 修改解压目录的权限
-    chmod -R 777 multipleforlinux
+    chmod -R 777 .
 
     # 添加权限
-    chmod +x /tmp/multipleforlinux/multipleforlinux/multiple-cli
-    chmod +x /tmp/multipleforlinux/multipleforlinux/multiple-node
+    chmod +x ./multiple-cli
+    chmod +x ./multiple-node
 
     # 配置环境变量
     echo "正在配置环境变量..."
-    echo 'PATH=$PATH:/tmp/multipleforlinux/multipleforlinux/multiple-cli' | sudo tee -a /etc/profile > /dev/null
-    echo 'PATH=$PATH:/tmp/multipleforlinux/multipleforlinux/multiple-cli' >> ~/.bashrc
-    source ~/.bashrc
+    echo 'PATH=$PATH:"/extracted directory/"' | sudo tee -a /etc/profile > /dev/null
+    echo 'PATH=$PATH:"/extracted directory/"' >> ~/.bashrc
+    source /etc/profile
 
     # 启动multiple-node
-    nohup /tmp/multipleforlinux/multipleforlinux/multiple-node > /tmp/multipleforlinux/multipleforlinux/output.log 2>&1 &
+    nohup ./multiple-node > ./output.log 2>&1 &
     echo "Multiple 已安装并启动。"
 
     # 提示用户输入标识码和PIN码
@@ -89,12 +92,13 @@ function install_multiple() {
     read -p "请输入PIN码: " pin
 
     # 使用用户提供的信息执行绑定命令
-    /tmp/multipleforlinux/multipleforlinux/multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
+    ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
 
     echo "绑定操作已完成。"
     
     # 清理压缩包
-    rm /tmp/multipleforlinux/multipleforlinux.tar
+    cd ..
+    rm multipleforlinux.tar
 
     # 让用户按任意键返回主菜单
     read -p "按任意键返回主菜单..." -n1 -s
