@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 脚本保存路径
+SCRIPT_PATH="$HOME/multiple.sh"
+
 # 设置代理环境变量的函数
 function set_proxy() {
     if [ -f "/tmp/multipleforlinux/multipleforlinux/proxy.txt" ]; then
