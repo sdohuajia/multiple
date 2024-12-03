@@ -41,20 +41,22 @@ function install_multiple() {
     # 解压程序
     tar -xvf multipleforlinux.tar
 
+    # 修改解压目录的权限
+    chmod -R 777 multiple
+
+    # 进入解压后的目录
+    cd multiple
+
     # 添加权限
     chmod +x ./multiple-cli
     chmod +x ./multiple-node
 
     # 配置环境变量
     echo "正在配置环境变量..."
-    echo 'PATH=$PATH:/path/to/your/extracted/directory/multiple-cli' | sudo tee -a /etc/profile > /dev/null
+    echo 'PATH=$PATH:/path/to/your/extracted/directory/multiple/multiple-cli' | sudo tee -a /etc/profile > /dev/null
     source /etc/profile
 
-    # 修改解压目录的权限
-    chmod -R 777 multipleforlinux
-
     # 启动multiple-node
-    cd multipleforlinux  # 假设解压后的目录名为multipleforlinux
     nohup ./multiple-node > output.log 2>&1 &
     echo "Multiple 已安装并启动。"
 }
