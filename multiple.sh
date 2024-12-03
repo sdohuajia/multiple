@@ -13,7 +13,7 @@ function main_menu() {
         echo "1. 安装 Multiple"
         echo "2. 验证安装"
         echo "3. 退出"
-        read -p "请输入选项号码: " choice
+        read -p "请输入选项: " choice
         
         case $choice in
             1)
@@ -53,7 +53,7 @@ function install_multiple() {
 
     # 配置环境变量
     echo "正在配置环境变量..."
-    echo 'PATH=$PATH:/path/to/your/extracted/directory/multiple/multiple-cli' | sudo tee -a /etc/profile > /dev/null
+    echo 'PATH=$PATH:/root/multipleforlinux/multiple-cli' | sudo tee -a /etc/profile > /dev/null
     source /etc/profile
 
     # 启动multiple-node
@@ -68,6 +68,9 @@ function install_multiple() {
     multiple-cli bind --bandwidth-download 100 --identifier $identifier --pin $pin --storage 200 --bandwidth-upload 100
 
     echo "绑定操作已完成。"
+    
+    # 让用户按任意键返回主菜单
+    read -p "按任意键返回主菜单..." -n1 -s
 }
 
 # 验证安装的函数
