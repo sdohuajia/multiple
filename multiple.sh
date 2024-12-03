@@ -42,10 +42,10 @@ function install_multiple() {
     tar -xvf multipleforlinux.tar
 
     # 修改解压目录的权限
-    chmod -R 777 multiple
+    chmod -R 777 multipleforlinux
 
     # 进入解压后的目录
-    cd multiple
+    cd multipleforlinux
 
     # 添加权限
     chmod +x ./multiple-cli
