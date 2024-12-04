@@ -57,54 +57,74 @@ function main_menu() {
 
 # 安装Multiple的函数
 function install_multiple() {
-    # 下载程序
+    # 创建安装目录
+    INSTALL_DIR="/root/multipleforlinux"
+    mkdir -p "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+
+    # 下载程序并添加错误处理
+    echo "正在下载 Multiple..."
     if ! wget -O multipleforlinux.tar https://cdn.app.multiple.cc/client/linux/x64/multipleforlinux.tar; then
-        echo "下载程序失败，请检查网络连接。"
+        echo "下载失败，请检查网络连接"
         return 1
     fi
+
+    # 解压前清理可能存在的旧文件
+    rm -rf multiple-cli multiple-node
 
     # 解压程序
-    tar -xvf multipleforlinux.tar
-    if [ $? -ne 0 ]; then
-        echo "解压程序失败，请检查文件或权限。"
+    echo "正在解压文件..."
+    if ! tar -xf multipleforlinux.tar; then
+        echo "解压失败"
         return 1
     fi
 
-    # 修改解压目录的权限
-    chmod -R 777 multipleforlinux
+    # 设置执行权限
+    chmod +x multiple-cli multiple-node
 
-    # 进入解压后的目录
-    cd multipleforlinux
-
-    # 添加权限
-    chmod +x ./multiple-cli
-    chmod +x ./multiple-node
-
-    # 配置环境变量
-    echo "正在配置环境变量..."
-    echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile > /dev/null
-    echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
-    source /etc/profile
-    source ~/.bashrc
-
-    # 启动multiple-node
+    # 启动服务前先检查是否已运行
+    echo "正在启动服务..."
+    pkill multiple-node
+    sleep 2
     nohup ./multiple-node > ./output.log 2>&1 &
-    echo "Multiple 已安装并启动。"
 
-    # 提示用户输入标识码和PIN码
-    read -p "请输入唯一标识码: " identifier
-    read -p "请输入PIN码: " pin
+    # 等待服务启动
+    sleep 5
 
-    # 使用用户提供的信息执行绑定命令
-    ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
+    # 检查服务是否正常运行
+    if ! pgrep multiple-node > /dev/null; then
+        echo "服务启动失败，请检查 output.log"
+        return 1
+    fi
 
-    echo "绑定操作已完成。"
-    
-    # 清理压缩包
-    cd ..
-    rm multipleforlinux.tar
+    # 用户输入验证
+    while true; do
+        read -p "请输入唯一标识码: " identifier
+        if [ -n "$identifier" ]; then
+            break
+        fi
+        echo "标识码不能为空，请重新输入"
+    done
 
-    # 让用户按任意键返回主菜单
+    while true; do
+        read -p "请输入PIN码: " pin
+        if [ -n "$pin" ]; then
+            break
+        fi
+        echo "PIN码不能为空，请重新输入"
+    done
+
+    # 执行绑定命令
+    echo "正在执行绑定..."
+    if ! ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100; then
+        echo "绑定失败，请检查标识码和PIN码是否正确"
+        return 1
+    fi
+
+    # 清理文件
+    rm -f multipleforlinux.tar
+
+    echo "Multiple 安装完成！"
     read -p "按任意键返回主菜单..." -n1 -s
 }
 
