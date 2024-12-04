@@ -26,9 +26,9 @@ function main_menu() {
         echo "请选择要执行的操作:"
         echo "1. 安装 Multiple"
         echo "2. 验证安装"
-        echo "3. 使用代理模式多开"
+        echo "3. 使用代理模式多开（不可用）"
         echo "4. 退出"
-        read -p "请输入选项号码: " choice
+        read -p "请输入选项: " choice
         
         case $choice in
             1)
@@ -111,7 +111,6 @@ function use_proxy_mode() {
     
     # 创建proxy.txt文件并让用户填写代理
     echo "请填写代理服务器地址，按回车继续，空白不填按回车即可完成。"
-    echo "例如：socks5://user:pass@proxy.example.com:port"
     mkdir -p /tmp/multipleforlinux/multipleforlinux/
     touch /tmp/multipleforlinux/multipleforlinux/proxy.txt
     while true; do
@@ -141,20 +140,24 @@ function use_proxy_mode() {
         # 创建实例目录
         INSTANCE_DIR="/tmp/multipleforlinux_instance$i"
         mkdir -p "$INSTANCE_DIR"
+        cd "$INSTANCE_DIR"
         
+        # 直接下载必要文件
+        wget -O multiple-cli https://cdn.app.multiple.cc/client/linux/x64/multiple-cli
+        wget -O multiple-node https://cdn.app.multiple.cc/client/linux/x64/multiple-node
+
         # 创建实例配置文件
-        cat > "$INSTANCE_DIR/config.json" <<EOF
+        cat > config.json <<EOF
 {
     "port": $INSTANCE_PORT,
     "data_dir": "$INSTANCE_DIR/data"
 }
 EOF
 
-        # 复制文件并设置权限
-        cp -r /tmp/multipleforlinux/multipleforlinux/* "$INSTANCE_DIR/"
-        chmod -R 777 "$INSTANCE_DIR"
-        chmod +x "$INSTANCE_DIR/multiple-cli"
-        chmod +x "$INSTANCE_DIR/multiple-node"
+        # 设置权限
+        chmod -R 777 .
+        chmod +x multiple-cli
+        chmod +x multiple-node
 
         # 设置代理（如果有）
         if [ ${#proxies[@]} -ge $i ]; then
@@ -164,7 +167,7 @@ EOF
         fi
 
         # 使用唯一配置启动实例
-        nohup "$INSTANCE_DIR/multiple-node" --config "$INSTANCE_DIR/config.json" > "$INSTANCE_DIR/output.log" 2>&1 &
+        nohup ./multiple-node --config config.json > output.log 2>&1 &
         
         # 等待节点启动
         sleep 2
@@ -173,7 +176,8 @@ EOF
         read -p "请输入第 $i 个实例的唯一标识码: " identifier
         read -p "请输入第 $i 个实例的PIN码: " pin
 
-        "$INSTANCE_DIR/multiple-cli" --port $INSTANCE_PORT bind \
+        ./multiple-cli bind \
+            --port $INSTANCE_PORT \
             --bandwidth-download 100 \
             --identifier "$identifier" \
             --pin "$pin" \
