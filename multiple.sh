@@ -75,12 +75,8 @@ function install_multiple() {
     # 确保路径变量被添加到 /etc/profile 文件的末尾
     echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile
     
-    # 也添加到用户的 .bashrc 文件中
-    echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
-    
     # 重新加载环境变量
     source /etc/profile
-    source ~/.bashrc
 
     # 启动multiple-node
     nohup ./multiple-node > ./output.log 2>&1 &
