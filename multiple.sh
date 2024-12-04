@@ -72,20 +72,18 @@ function install_multiple() {
     # 解压前清理可能存在的旧文件
     rm -rf multiple-cli multiple-node
 
-    # 解压程序（修改解压命令，将文件直接解压到当前目录）
+    # 解压程序
     echo "正在解压文件..."
     if ! tar xf multipleforlinux.tar --strip-components=1; then
         echo "解压失败"
         return 1
     fi
 
-    # 修改文件权限
+    # 先给整个目录授权
     chmod -R 777 .
     
-    # 进入解压后的目录
-    cd multipleforlinux
-    
-    # 设置执行权限
+    # 确保在正确的目录下执行权限设置
+    cd "$INSTALL_DIR"
     chmod +x multiple-cli multiple-node
 
     # 配置环境变量
