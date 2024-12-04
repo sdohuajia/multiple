@@ -93,44 +93,18 @@ function install_multiple() {
     source /etc/profile
     source ~/.bashrc
 
-    # 启动服务前先检查是否已运行
-    echo "正在启动服务..."
-    pkill multiple-node
-    sleep 2
+    # 启动multiple-node
     nohup ./multiple-node > ./output.log 2>&1 &
+    echo "Multiple 已安装并启动。"
 
-    # 等待服务启动
-    sleep 5
+    # 提示用户输入标识码和PIN码
+    read -p "请输入唯一标识码: " identifier
+    read -p "请输入PIN码: " pin
 
-    # 检查服务是否正常运行
-    if ! pgrep multiple-node > /dev/null; then
-        echo "服务启动失败，请检查 output.log"
-        return 1
-    fi
+    # 使用用户提供的信息执行绑定命令
+    ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
 
-    # 用户输入验证
-    while true; do
-        read -p "请输入唯一标识码: " identifier
-        if [ -n "$identifier" ]; then
-            break
-        fi
-        echo "标识码不能为空，请重新输入"
-    done
-
-    while true; do
-        read -p "请输入PIN码: " pin
-        if [ -n "$pin" ]; then
-            break
-        fi
-        echo "PIN码不能为空，请重新输入"
-    done
-
-    # 执行绑定命令
-    echo "正在执行绑定..."
-    if ! ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100; then
-        echo "绑定失败，请检查标识码和PIN码是否正确"
-        return 1
-    fi
+    echo "绑定操作已完成。"
 
     # 清理文件
     rm -f multipleforlinux.tar
