@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 脚本保存路径
+SCRIPT_PATH="$HOME/multiple.sh"
+
 # 设置代理环境变量的函数
 function set_proxy() {
     if [ -f "/tmp/multipleforlinux/multipleforlinux/proxy.txt" ]; then
@@ -26,7 +29,7 @@ function main_menu() {
         echo "3. 使用代理模式多开"
         echo "4. 删除节点"
         echo "5. 退出"
-        read -p "请输入选项号码: " choice
+        read -p "请输入选项: " choice
         
         case $choice in
             1)
