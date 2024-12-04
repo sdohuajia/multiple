@@ -26,7 +26,7 @@ function main_menu() {
         echo "请选择要执行的操作:"
         echo "1. 安装 Multiple"
         echo "2. 验证安装"
-        echo "3. 使用代理模式多开"
+        echo "3. 使用代理模式多开（不可用）"
         echo "4. 删除节点"
         echo "5. 退出"
         read -p "请输入选项: " choice
