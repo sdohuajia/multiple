@@ -79,8 +79,21 @@ function install_multiple() {
         return 1
     fi
 
+    # 修改解压目录的权限
+    chmod -R 777 multipleforlinux
+
+    # 进入解压后的目录
+    cd multipleforlinux
+    
     # 设置执行权限
     chmod +x multiple-cli multiple-node
+
+    # 配置环境变量
+    echo "正在配置环境变量..."
+    echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile > /dev/null
+    echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
+    source /etc/profile
+    source ~/.bashrc
 
     # 启动服务前先检查是否已运行
     echo "正在启动服务..."
