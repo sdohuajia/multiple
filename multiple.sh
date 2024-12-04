@@ -69,13 +69,14 @@ function install_multiple() {
     
     # 确保在正确的目录下执行权限设置
     cd "$INSTALL_DIR"
-    chmod +x multiple-cli multiple-node
+    chmod +x multiple-cli 
+    chmod +x multiple-node
 
     # 配置环境变量
     echo "正在配置环境变量..."
     
     # 确保路径变量被添加到 /etc/profile 文件的末尾
-    sudo sh -c "echo 'PATH=\$PATH:/root/multipleforlinux' >> /etc/profile"
+    sudo sh -c "echo 'PATH=$PATH:/root/multipleforlinux' >> /etc/profile"
     
     # 也添加到用户的 .bashrc 文件中
     echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
@@ -127,7 +128,7 @@ function uninstall_multiple() {
     rm -rf /root/multipleforlinux
     
     # 清理环境变量配置
-    sudo sed -i '/PATH=\$PATH:\/root\/multipleforlinux/d' /etc/profile
+    sudo sed -i '/PATH=$PATH:\/root\/multipleforlinux/d' /etc/profile
     sed -i '/PATH=$PATH:\/root\/multipleforlinux/d' ~/.bashrc
     
     # 重新加载环境变量
