@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 脚本保存路径
+SCRIPT_PATH="$HOME/multiple.sh"
+
 # 检查是否以root权限运行
 if [ "$EUID" -ne 0 ]; then
     echo "请以root权限运行此脚本"
