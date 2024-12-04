@@ -42,7 +42,7 @@ function main_menu() {
                 use_proxy_mode
                 ;;
             4)
-                exit 0
+                uninstall_multiple
                 ;;
             5)
                 exit 0
