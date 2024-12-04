@@ -1,67 +1,189 @@
 #!/bin/bash
 
-# 脚本保存路径
-SCRIPT_PATH="$HOME/multiple.sh"
-
-# 检查是否以root权限运行
-if [ "$EUID" -ne 0 ]; then
-    echo "请以root权限运行此脚本"
-    exit 1
-fi
-
-# 安装依赖函数
-function install_dependencies() {
-    apt-get update
-    apt-get install -y curl wget tar
-}
-
-# 安装Multiple函数
-function install_multiple() {
-    echo "开始安装Multiple..."
-    
-    # 创建安装目录
-    mkdir -p /root/multipleforlinux
-    cd /root/multipleforlinux
-    
-    # 下载并解压
-    wget -O multiple.tar.gz https://github.com/ferdie-jhovie/multiple/releases/download/v1.0.0/multiple.tar.gz
-    tar -xzf multiple.tar.gz
-    
-    # 添加环境变量
-    echo 'PATH=$PATH:/root/multipleforlinux' >> /etc/profile
-    echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
-    source /etc/profile
-    source ~/.bashrc
-    
-    # 设置权限
-    chmod +x /root/multipleforlinux/multiple-node
-    
-    echo "Multiple安装完成!"
-}
-
-# 验证安装函数
-function verify_installation() {
-    if [ -f "/root/multipleforlinux/multiple-node" ]; then
-        echo "Multiple已正确安装!"
-        read -p "按任意键返回主菜单..." -n1 -s
+# 设置代理环境变量的函数
+function set_proxy() {
+    if [ -f "/tmp/multipleforlinux/multipleforlinux/proxy.txt" ]; then
+        # 读取代理服务器的列表
+        mapfile -t proxies < "/tmp/multipleforlinux/multipleforlinux/proxy.txt"
     else
-        echo "Multiple未安装或安装不完整，请重新安装"
-        read -p "按任意键返回主菜单..." -n1 -s
+        echo "未找到proxy.txt文件，代理将不使用。"
+        proxies=()
     fi
 }
 
-# 代理模式多开函数
-function proxy_mode() {
-    echo "请输入要启动的实例数量:"
-    read instance_count
-    
-    for ((i=1; i<=instance_count; i++))
-    do
-        port=$((20000 + i))
-        multiple-node --socks5 127.0.0.1:$port &
-        echo "已启动实例 $i，代理端口: $port"
+# 主菜单函数
+function main_menu() {
+    while true; do
+        clear
+        echo "脚本由大赌社区哈哈哈哈编写，推特 @ferdie_jhovie，免费开源，请勿相信收费"
+        echo "如有问题，可联系推特，仅此只有一个号"
+        echo "新建了一个电报群，方便大家交流：t.me/Sdohua"
+        echo "================================================================"
+        echo "退出脚本，请按键盘 ctrl + C 退出即可"
+        echo "请选择要执行的操作:"
+        echo "1. 安装 Multiple"
+        echo "2. 验证安装"
+        echo "3. 使用代理模式多开"
+        echo "4. 删除节点"
+        echo "5. 退出"
+        read -p "请输入选项号码: " choice
+        
+        case $choice in
+            1)
+                install_multiple
+                ;;
+            2)
+                verify_installation
+                ;;
+            3)
+                use_proxy_mode
+                ;;
+            4)
+                exit 0
+                ;;
+            5)
+                exit 0
+                ;;
+            *)
+                echo "无效的选项，请重新选择。"
+                sleep 2
+                ;;
+        esac
     done
+}
+
+# 安装Multiple的函数
+function install_multiple() {
+    # 下载程序
+    if ! wget -O multipleforlinux.tar https://cdn.app.multiple.cc/client/linux/x64/multipleforlinux.tar; then
+        echo "下载程序失败，请检查网络连接。"
+        return 1
+    fi
+
+    # 解压程序
+    tar -xvf multipleforlinux.tar
+    if [ $? -ne 0 ]; then
+        echo "解压程序失败，请检查文件或权限。"
+        return 1
+    fi
+
+    # 修改解压目录的权限
+    chmod -R 777 multipleforlinux
+
+    # 进入解压后的目录
+    cd multipleforlinux
+
+    # 添加权限
+    chmod +x ./multiple-cli
+    chmod +x ./multiple-node
+
+    # 配置环境变量
+    echo "正在配置环境变量..."
+    echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile > /dev/null
+    echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
+    source /etc/profile
+    source ~/.bashrc
+
+    # 启动multiple-node
+    nohup ./multiple-node > ./output.log 2>&1 &
+    echo "Multiple 已安装并启动。"
+
+    # 提示用户输入标识码和PIN码
+    read -p "请输入唯一标识码: " identifier
+    read -p "请输入PIN码: " pin
+
+    # 使用用户提供的信息执行绑定命令
+    ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
+
+    echo "绑定操作已完成。"
     
+    # 清理压缩包
+    cd ..
+    rm multipleforlinux.tar
+
+    # 让用户按任意键返回主菜单
+    read -p "按任意键返回主菜单..." -n1 -s
+}
+
+# 使用代理模式多开Multiple的函数
+function use_proxy_mode() {
+    # 创建proxy.txt文件并让用户填写代理
+    echo "请填写代理服务器地址，按回车继续，空白不填按回车即可完成。"
+    echo "例如：socks5://user:pass@proxy.example.com:port"
+    touch /tmp/multipleforlinux/multipleforlinux/proxy.txt
+    while true; do
+        read -p "代理服务器地址: " proxy
+        if [ -z "$proxy" ]; then
+            break
+        fi
+        echo "$proxy" >> /tmp/multipleforlinux/multipleforlinux/proxy.txt
+    done
+
+    set_proxy
+
+    # 询问用户想多开几个实例
+    read -p "请输入想要多开的实例数量: " num_instances
+
+    # 检查输入是否为数字
+    if ! [[ "$num_instances" =~ ^[0-9]+$ ]]; then
+        echo "请输入有效的数字。"
+        return 1
+    fi
+
+    # 循环创建和启动实例
+    for (( i=1; i<=$num_instances; i++ )); do
+        if [ ${#proxies[@]} -ge $i ]; then
+            export http_proxy="${proxies[i-1]}"
+            export https_proxy="${proxies[i-1]}"
+            export ftp_proxy="${proxies[i-1]}"
+            if [[ ${proxies[i-1]} =~ ^socks5:// ]]; then
+                export all_proxy="${proxies[i-1]}"
+                echo "SOCKS5代理已设置为 ${proxies[i-1]}"
+            else
+                echo "HTTP代理已设置为 ${proxies[i-1]}"
+            fi
+        else
+            echo "代理服务器列表不足，实例 $i 将不使用代理。"
+        fi
+        
+        # 创建一个新的实例目录并复制文件
+        mkdir -p "/tmp/multipleforlinux_instance$i"
+        cp -r /tmp/multipleforlinux/multipleforlinux/* "/tmp/multipleforlinux_instance$i/"
+        
+        # 修改权限
+        chmod -R 777 "/tmp/multipleforlinux_instance$i"
+
+        # 添加权限
+        chmod +x "/tmp/multipleforlinux_instance$i/multiple-cli"
+        chmod +x "/tmp/multipleforlinux_instance$i/multiple-node"
+
+        # 启动multiple-node
+        nohup "/tmp/multipleforlinux_instance$i/multiple-node" > "/tmp/multipleforlinux_instance$i/output.log" 2>&1 &
+        echo "第 $i 个实例已安装并启动。"
+
+        # 提示用户输入标识码和PIN码
+        read -p "请输入唯一标识码: " identifier
+        read -p "请输入PIN码: " pin
+
+        # 使用用户提供的信息执行绑定命令
+        "/tmp/multipleforlinux_instance$i/multiple-cli" bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
+
+        echo "绑定操作已完成。"
+    done
+
+    echo "所有实例已安装并启动。"
+    read -p "按任意键返回主菜单..." -n1 -s
+}
+
+# 验证安装的函数
+function verify_installation() {
+    echo "正在验证安装..."
+    /tmp/multipleforlinux/multipleforlinux/multiple-cli --version
+    if [ $? -eq 0 ]; then
+        echo "安装验证成功。"
+    else
+        echo "安装验证失败，请检查安装过程。"
+    fi
     read -p "按任意键返回主菜单..." -n1 -s
 }
 
@@ -87,48 +209,5 @@ function uninstall_multiple() {
     read -p "按任意键返回主菜单..." -n1 -s
 }
 
-# 主菜单函数
-function main_menu() {
-    while true; do
-        clear
-        echo "脚本由大赌社区哈哈哈哈编写，推特 @ferdie_jhovie，免费开源，请勿相信收费"
-        echo "如有问题，可联系推特，仅此只有一个号"
-        echo "新建了一个电报群，方便大家交流：t.me/Sdohua"
-        echo "================================================================"
-        echo "退出脚本，请按键盘 ctrl + C 退出即可"
-        echo "请选择要执行的操作:"
-        echo "1. 安装 Multiple"
-        echo "2. 验证安装"
-        echo "3. 使用代理模式多开"
-        echo "4. 删除 Multiple"
-        echo "5. 退出"
-        read -p "请输入选项号码: " choice
-        
-        case $choice in
-            1)
-                install_dependencies
-                install_multiple
-                ;;
-            2)
-                verify_installation
-                ;;
-            3)
-                proxy_mode
-                ;;
-            4)
-                uninstall_multiple
-                ;;
-            5)
-                echo "退出脚本"
-                exit 0
-                ;;
-            *)
-                echo "无效选项，请重新选择"
-                sleep 2
-                ;;
-        esac
-    done
-}
-
-# 运行主菜单
+# 启动主菜单
 main_menu
