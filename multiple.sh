@@ -76,7 +76,7 @@ function install_multiple() {
     echo "正在配置环境变量..."
     
     # 确保路径变量被添加到 /etc/profile 文件的末尾
-    if ! echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile; then
+    if ! echo 'PATH=$PATH:/root/multipleforlinux/' | sudo tee -a /etc/profile; then
         echo "配置环境变量失败，请检查权限或空间。"
         return 1
     fi
