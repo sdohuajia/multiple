@@ -41,42 +41,39 @@ function main_menu() {
 }
 
 # 安装Multiple的函数
+# 安装Multiple的函数
 function install_multiple() {
-    # 创建安装目录
-    INSTALL_DIR="/root/multipleforlinux"
-    mkdir -p "$INSTALL_DIR"
-    cd "$INSTALL_DIR"
-
     # 下载程序并添加错误处理
     echo "正在下载 Multiple..."
-    if ! wget -O multipleforlinux.tar https://cdn.app.multiple.cc/client/linux/x64/multipleforlinux.tar; then
+    if ! wget -O /root/multipleforlinux.tar https://cdn.app.multiple.cc/client/linux/x64/multipleforlinux.tar; then
         echo "下载失败，请检查网络连接"
         return 1
     fi
 
     # 解压前清理可能存在的旧文件
-    rm -rf multiple-cli multiple-node
+    rm -rf /root/multipleforlinux
 
     # 解压程序
     echo "正在解压文件..."
-    if ! tar xf multipleforlinux.tar --strip-components=1; then
+    if ! tar xf /root/multipleforlinux.tar -C /root; then
         echo "解压失败"
         return 1
     fi
 
-    # 先给整个目录授权
-    chmod -R 777 .
-    
     # 确保在正确的目录下执行权限设置
-    cd "$INSTALL_DIR"
+    cd "/root/multipleforlinux"
     chmod +x multiple-cli 
     chmod +x multiple-node
+
+    # 先给整个目录授权
+    cd /root
+    chmod -R 777 /root/multipleforlinux
 
     # 配置环境变量
     echo "正在配置环境变量..."
     
     # 确保路径变量被添加到 /etc/profile 文件的末尾
-    sudo sh -c "echo 'PATH=$PATH:/root/multipleforlinux' >> /etc/profile"
+    echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile
     
     # 也添加到用户的 .bashrc 文件中
     echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
@@ -99,7 +96,7 @@ function install_multiple() {
     echo "绑定操作已完成。"
 
     # 清理文件
-    rm -f multipleforlinux.tar
+    rm -f /root/multipleforlinux.tar
 
     echo "Multiple 安装完成！"
     read -p "按任意键返回主菜单..." -n1 -s
