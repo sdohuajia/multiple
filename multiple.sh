@@ -106,9 +106,13 @@ function install_multiple() {
 
 # 使用代理模式多开Multiple的函数
 function use_proxy_mode() {
+    # 为每个实例创建唯一的端口号
+    BASE_PORT=8080  # 基础端口号
+    
     # 创建proxy.txt文件并让用户填写代理
     echo "请填写代理服务器地址，按回车继续，空白不填按回车即可完成。"
     echo "例如：socks5://user:pass@proxy.example.com:port"
+    mkdir -p /tmp/multipleforlinux/multipleforlinux/
     touch /tmp/multipleforlinux/multipleforlinux/proxy.txt
     while true; do
         read -p "代理服务器地址: " proxy
@@ -131,46 +135,54 @@ function use_proxy_mode() {
 
     # 循环创建和启动实例
     for (( i=1; i<=$num_instances; i++ )); do
+        # 计算每个实例的唯一端口
+        INSTANCE_PORT=$((BASE_PORT + i))
+        
+        # 创建实例目录
+        INSTANCE_DIR="/tmp/multipleforlinux_instance$i"
+        mkdir -p "$INSTANCE_DIR"
+        
+        # 创建实例配置文件
+        cat > "$INSTANCE_DIR/config.json" <<EOF
+{
+    "port": $INSTANCE_PORT,
+    "data_dir": "$INSTANCE_DIR/data"
+}
+EOF
+
+        # 复制文件并设置权限
+        cp -r /tmp/multipleforlinux/multipleforlinux/* "$INSTANCE_DIR/"
+        chmod -R 777 "$INSTANCE_DIR"
+        chmod +x "$INSTANCE_DIR/multiple-cli"
+        chmod +x "$INSTANCE_DIR/multiple-node"
+
+        # 设置代理（如果有）
         if [ ${#proxies[@]} -ge $i ]; then
             export http_proxy="${proxies[i-1]}"
             export https_proxy="${proxies[i-1]}"
-            export ftp_proxy="${proxies[i-1]}"
-            if [[ ${proxies[i-1]} =~ ^socks5:// ]]; then
-                export all_proxy="${proxies[i-1]}"
-                echo "SOCKS5代理已设置为 ${proxies[i-1]}"
-            else
-                echo "HTTP代理已设置为 ${proxies[i-1]}"
-            fi
-        else
-            echo "代理服务器列表不足，实例 $i 将不使用代理。"
+            export all_proxy="${proxies[i-1]}"
         fi
+
+        # 使用唯一配置启动实例
+        nohup "$INSTANCE_DIR/multiple-node" --config "$INSTANCE_DIR/config.json" > "$INSTANCE_DIR/output.log" 2>&1 &
         
-        # 创建一个新的实例目录并复制文件
-        mkdir -p "/tmp/multipleforlinux_instance$i"
-        cp -r /tmp/multipleforlinux/multipleforlinux/* "/tmp/multipleforlinux_instance$i/"
-        
-        # 修改权限
-        chmod -R 777 "/tmp/multipleforlinux_instance$i"
+        # 等待节点启动
+        sleep 2
 
-        # 添加权限
-        chmod +x "/tmp/multipleforlinux_instance$i/multiple-cli"
-        chmod +x "/tmp/multipleforlinux_instance$i/multiple-node"
+        # 使用对应端口执行绑定命令
+        read -p "请输入第 $i 个实例的唯一标识码: " identifier
+        read -p "请输入第 $i 个实例的PIN码: " pin
 
-        # 启动multiple-node
-        nohup "/tmp/multipleforlinux_instance$i/multiple-node" > "/tmp/multipleforlinux_instance$i/output.log" 2>&1 &
-        echo "第 $i 个实例已安装并启动。"
+        "$INSTANCE_DIR/multiple-cli" --port $INSTANCE_PORT bind \
+            --bandwidth-download 100 \
+            --identifier "$identifier" \
+            --pin "$pin" \
+            --storage 200 \
+            --bandwidth-upload 100
 
-        # 提示用户输入标识码和PIN码
-        read -p "请输入唯一标识码: " identifier
-        read -p "请输入PIN码: " pin
-
-        # 使用用户提供的信息执行绑定命令
-        "/tmp/multipleforlinux_instance$i/multiple-cli" bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
-
-        echo "绑定操作已完成。"
+        echo "第 $i 个实例已启动，运行在端口 $INSTANCE_PORT"
     done
-
-    echo "所有实例已安装并启动。"
+    
     read -p "按任意键返回主菜单..." -n1 -s
 }
 
