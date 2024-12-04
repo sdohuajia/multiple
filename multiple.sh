@@ -56,6 +56,7 @@ function main_menu() {
 }
 
 # 安装Multiple的函数
+# 安装Multiple的函数
 function install_multiple() {
     # 创建安装目录
     INSTALL_DIR="/root/multipleforlinux"
@@ -74,14 +75,14 @@ function install_multiple() {
 
     # 解压程序
     echo "正在解压文件..."
-    if ! tar -xf multipleforlinux.tar; then
+    if ! tar xf multipleforlinux.tar; then
         echo "解压失败"
         return 1
     fi
 
-    # 修改解压目录的权限
-    chmod -R 777 multipleforlinux
-
+    # 修改文件权限
+    chmod -R 777 .
+    
     # 进入解压后的目录
     cd multipleforlinux
     
