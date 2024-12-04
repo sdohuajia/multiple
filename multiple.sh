@@ -3,17 +3,6 @@
 # 脚本保存路径
 SCRIPT_PATH="$HOME/multiple.sh"
 
-# 设置代理环境变量的函数
-function set_proxy() {
-    if [ -f "/tmp/multipleforlinux/multipleforlinux/proxy.txt" ]; then
-        # 读取代理服务器的列表
-        mapfile -t proxies < "/tmp/multipleforlinux/multipleforlinux/proxy.txt"
-    else
-        echo "未找到proxy.txt文件，代理将不使用。"
-        proxies=()
-    fi
-}
-
 # 主菜单函数
 function main_menu() {
     while true; do
@@ -26,9 +15,8 @@ function main_menu() {
         echo "请选择要执行的操作:"
         echo "1. 安装 Multiple"
         echo "2. 验证安装"
-        echo "3. 使用代理模式多开（不可用）"
-        echo "4. 删除节点"
-        echo "5. 退出"
+        echo "3. 删除节点"
+        echo "4. 退出"
         read -p "请输入选项: " choice
         
         case $choice in
@@ -39,12 +27,9 @@ function main_menu() {
                 verify_installation
                 ;;
             3)
-                use_proxy_mode
-                ;;
-            4)
                 uninstall_multiple
                 ;;
-            5)
+            4)
                 exit 0
                 ;;
             *)
@@ -88,8 +73,14 @@ function install_multiple() {
 
     # 配置环境变量
     echo "正在配置环境变量..."
-    echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile > /dev/null
+    
+    # 确保路径变量被添加到 /etc/profile 文件的末尾
+    sudo sh -c "echo 'PATH=\$PATH:/root/multipleforlinux' >> /etc/profile"
+    
+    # 也添加到用户的 .bashrc 文件中
     echo 'PATH=$PATH:/root/multipleforlinux' >> ~/.bashrc
+    
+    # 重新加载环境变量
     source /etc/profile
     source ~/.bashrc
 
@@ -113,80 +104,10 @@ function install_multiple() {
     read -p "按任意键返回主菜单..." -n1 -s
 }
 
-# 使用代理模式多开Multiple的函数
-function use_proxy_mode() {
-    # 创建proxy.txt文件并让用户填写代理
-    echo "请填写代理服务器地址，按回车继续，空白不填按回车即可完成。"
-    echo "例如：socks5://user:pass@proxy.example.com:port"
-    touch /tmp/multipleforlinux/multipleforlinux/proxy.txt
-    while true; do
-        read -p "代理服务器地址: " proxy
-        if [ -z "$proxy" ]; then
-            break
-        fi
-        echo "$proxy" >> /tmp/multipleforlinux/multipleforlinux/proxy.txt
-    done
-
-    set_proxy
-
-    # 询问用户想多开几个实例
-    read -p "请输入想要多开的实例数量: " num_instances
-
-    # 检查输入是否为数字
-    if ! [[ "$num_instances" =~ ^[0-9]+$ ]]; then
-        echo "请输入有效的数字。"
-        return 1
-    fi
-
-    # 循环创建和启动实例
-    for (( i=1; i<=$num_instances; i++ )); do
-        if [ ${#proxies[@]} -ge $i ]; then
-            export http_proxy="${proxies[i-1]}"
-            export https_proxy="${proxies[i-1]}"
-            export ftp_proxy="${proxies[i-1]}"
-            if [[ ${proxies[i-1]} =~ ^socks5:// ]]; then
-                export all_proxy="${proxies[i-1]}"
-                echo "SOCKS5代理已设置为 ${proxies[i-1]}"
-            else
-                echo "HTTP代理已设置为 ${proxies[i-1]}"
-            fi
-        else
-            echo "代理服务器列表不足，实例 $i 将不使用代理。"
-        fi
-        
-        # 创建一个新的实例目录并复制文件
-        mkdir -p "/tmp/multipleforlinux_instance$i"
-        cp -r /tmp/multipleforlinux/multipleforlinux/* "/tmp/multipleforlinux_instance$i/"
-        
-        # 修改权限
-        chmod -R 777 "/tmp/multipleforlinux_instance$i"
-
-        # 添加权限
-        chmod +x "/tmp/multipleforlinux_instance$i/multiple-cli"
-        chmod +x "/tmp/multipleforlinux_instance$i/multiple-node"
-
-        # 启动multiple-node
-        nohup "/tmp/multipleforlinux_instance$i/multiple-node" > "/tmp/multipleforlinux_instance$i/output.log" 2>&1 &
-        echo "第 $i 个实例已安装并启动。"
-
-        # 提示用户输入标识码和PIN码
-        read -p "请输入唯一标识码: " identifier
-        read -p "请输入PIN码: " pin
-
-        # 使用用户提供的信息执行绑定命令
-        "/tmp/multipleforlinux_instance$i/multiple-cli" bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
-
-        echo "绑定操作已完成。"
-    done
-
-    echo "所有实例已安装并启动。"
-    read -p "按任意键返回主菜单..." -n1 -s
-}
-
 # 验证安装的函数
 function verify_installation() {
     echo "正在验证安装..."
-    /tmp/multipleforlinux/multipleforlinux/multiple-cli --version
+    /root/multipleforlinux/multiple-cli --version
     if [ $? -eq 0 ]; then
         echo "安装验证成功。"
     else
@@ -206,7 +127,7 @@ function uninstall_multiple() {
     rm -rf /root/multipleforlinux
     
     # 清理环境变量配置
-    sed -i '/PATH=$PATH:\/root\/multipleforlinux/d' /etc/profile
+    sudo sed -i '/PATH=\$PATH:\/root\/multipleforlinux/d' /etc/profile
     sed -i '/PATH=$PATH:\/root\/multipleforlinux/d' ~/.bashrc
     
     # 重新加载环境变量
