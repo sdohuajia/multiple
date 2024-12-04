@@ -56,7 +56,6 @@ function main_menu() {
 }
 
 # 安装Multiple的函数
-# 安装Multiple的函数
 function install_multiple() {
     # 创建安装目录
     INSTALL_DIR="/root/multipleforlinux"
@@ -73,9 +72,9 @@ function install_multiple() {
     # 解压前清理可能存在的旧文件
     rm -rf multiple-cli multiple-node
 
-    # 解压程序
+    # 解压程序（修改解压命令，将文件直接解压到当前目录）
     echo "正在解压文件..."
-    if ! tar xf multipleforlinux.tar; then
+    if ! tar xf multipleforlinux.tar --strip-components=1; then
         echo "解压失败"
         return 1
     fi
