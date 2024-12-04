@@ -41,7 +41,6 @@ function main_menu() {
 }
 
 # 安装Multiple的函数
-# 安装Multiple的函数
 function install_multiple() {
     # 下载程序并添加错误处理
     echo "正在下载 Multiple..."
@@ -50,7 +49,7 @@ function install_multiple() {
         return 1
     fi
 
-    # 解压前清理可能存在的旧文件
+    # 清理可能存在的旧文件
     rm -rf /root/multipleforlinux
 
     # 解压程序
@@ -62,10 +61,14 @@ function install_multiple() {
 
     # 确保在正确的目录下执行权限设置
     cd "/root/multipleforlinux"
+    if [ ! -f "./multiple-cli" ]; then
+        echo "multiple-cli 文件不存在，请检查下载和解压过程。"
+        return 1
+    fi
     chmod +x multiple-cli 
     chmod +x multiple-node
 
-    # 先给整个目录授权
+    # 给整个目录授权
     cd /root
     chmod -R 777 /root/multipleforlinux
 
@@ -73,13 +76,16 @@ function install_multiple() {
     echo "正在配置环境变量..."
     
     # 确保路径变量被添加到 /etc/profile 文件的末尾
-    echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile
+    if ! echo 'PATH=$PATH:/root/multipleforlinux' | sudo tee -a /etc/profile; then
+        echo "配置环境变量失败，请检查权限或空间。"
+        return 1
+    fi
     
     # 重新加载环境变量
     source /etc/profile
 
     # 启动multiple-node
-    nohup ./multiple-node > ./output.log 2>&1 &
+    nohup /root/multipleforlinux/multiple-node > /root/output.log 2>&1 &
     echo "Multiple 已安装并启动。"
 
     # 提示用户输入标识码和PIN码
@@ -87,9 +93,12 @@ function install_multiple() {
     read -p "请输入PIN码: " pin
 
     # 使用用户提供的信息执行绑定命令
-    ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100
-
-    echo "绑定操作已完成。"
+    cd /root/multipleforlinux
+    if ! ./multiple-cli bind --bandwidth-download 100 --identifier "$identifier" --pin "$pin" --storage 200 --bandwidth-upload 100; then
+        echo "绑定操作失败，请检查输入信息或网络连接。"
+    else
+        echo "绑定操作已完成。"
+    fi
 
     # 清理文件
     rm -f /root/multipleforlinux.tar
@@ -101,11 +110,10 @@ function install_multiple() {
 # 验证安装的函数
 function verify_installation() {
     echo "正在验证安装..."
-    /root/multipleforlinux/multiple-cli --version
-    if [ $? -eq 0 ]; then
-        echo "安装验证成功。"
-    else
+    if ! /root/multipleforlinux/multiple-cli --version; then
         echo "安装验证失败，请检查安装过程。"
+    else
+        echo "安装验证成功。"
     fi
     read -p "按任意键返回主菜单..." -n1 -s
 }
